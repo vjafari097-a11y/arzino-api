@@ -3,7 +3,6 @@ import json
 import urllib.request
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
-# آدرس‌های دریافت قیمت
 URLS = [
     "https://call1.tgju.org/ajax.json",
     "https://call2.tgju.org/ajax.json"
@@ -18,11 +17,9 @@ def get_prices():
                 data = json.loads(response.read().decode())
                 current = data.get("current", {})
                 
-                # استخراج قیمت دلار
                 dollar_raw = current.get("price_dollar_rl", {}).get("p")
                 dollar = int(float(str(dollar_raw).replace(",", ""))) if dollar_raw else None
                 
-                # استخراج قیمت طلای ۱۸ عیار
                 gold_raw = current.get("geram18", {}).get("p")
                 gold = int(float(str(gold_raw).replace(",", ""))) if gold_raw else None
                 
@@ -41,7 +38,7 @@ class handler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
         self.send_header('Content-type', 'application/json')
-        self.send_header('Access-Control-Allow-Origin', '*') # جلوگیری از خطای CORS
+        self.send_header('Access-Control-Allow-Origin', '*')
         self.end_headers()
         
         if self.path == '/prices':
@@ -51,7 +48,6 @@ class handler(BaseHTTPRequestHandler):
             self.wfile.write(json.dumps({"status": "ok", "message": "Arzino API is running"}).encode())
 
 if name == "__main__":
-    # رندر پورت رو از طریق متغیر محیطی PORT به ما میده
     port = int(os.environ.get("PORT", 8000))
     server_address = ('', port)
     httpd = HTTPServer(server_address, handler)
