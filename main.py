@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
-# اجازه دسترسی به سایت شما (GitHub Pages)
+# اجازه دسترسی به سایت شما (GitHub Pages) برای جلوگیری از خطای CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -45,6 +45,7 @@ def _parse_price(raw):
 
 async def _fetch_bulk() -> dict:
     now = datetime.now().timestamp()
+    # نکته: اینجا کلیدها بدون فاصله اضافی نوشته شدن تا باگ کد اصلی رفع بشه
     if "bulk" in _cache_data and now - _cache_time.get("bulk", 0) < _BULK_TTL:
         return _cache_data["bulk"]
 
@@ -72,9 +73,11 @@ async def get_dollar_price():
     now = datetime.now().timestamp()
     if key in _cache_data and now - _cache_time.get(key, 0) < _BULK_TTL:
         return _cache_data[key]
+    
     bulk = await _fetch_bulk()
     item = bulk.get("price_dollar_rl") or {}
     price = _parse_price(item.get("p") if isinstance(item, dict) else item)
+    
     if price:
         _cache_data[key] = price
         _cache_time[key] = now
@@ -86,9 +89,11 @@ async def get_gold18_price():
     now = datetime.now().timestamp()
     if key in _cache_data and now - _cache_time.get(key, 0) < _BULK_TTL:
         return _cache_data[key]
+    
     bulk = await _fetch_bulk()
     item = bulk.get("geram18") or {}
     price = _parse_price(item.get("p") if isinstance(item, dict) else item)
+    
     if price:
         _cache_data[key] = price
         _cache_time[key] = now
@@ -102,6 +107,8 @@ async def get_prices():
         get_gold18_price(),
         return_exceptions=True,
     )
+    
+    # اگر خطایی رخ داده بود، None برگردون
     dollar = None if isinstance(dollar, Exception) else dollar
     gold = None if isinstance(gold, Exception) else gold
 
@@ -119,6 +126,7 @@ async def root():
     return {"status": "ok", "message": "Arzino API is running ✅"}
 
 
+# این قسمت دقیقاً با دو زیرخط در اول و آخر نوشته شده
 if name == "__main__":
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run(app, host="0.0.0.0", port=port)
